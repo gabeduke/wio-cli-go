@@ -26,7 +26,6 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/gabeduke/wio-cli-go/pkg/config"
 	"github.com/gabeduke/wio-cli-go/pkg/nodes"
 	"github.com/gabeduke/wio-cli-go/pkg/user"
 	log "github.com/sirupsen/logrus"
@@ -101,15 +100,14 @@ func init() {
 	// will be global for your application.
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.wio.json)")
-	rootCmd.Flags().VarP(&logLevel, "log-level", "l", `log level: "info", "debug", "warn", "error" (default is warn)`)
+	rootCmd.PersistentFlags().VarP(&logLevel, "log-level", "l", `log level: "info", "debug", "warn", "error" (default is warn)`)
 	viper.BindPFlag("logLevel", rootCmd.PersistentFlags().Lookup("log-level"))
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
-	rootCmd.AddCommand(config.NewConfigureCmd(cfgFile))
-	rootCmd.AddCommand(user.NewUserCmd())
+	rootCmd.AddCommand(user.NewUserCmd(cfgFile))
 	rootCmd.AddCommand(nodes.NewNodesCmd())
 }
 

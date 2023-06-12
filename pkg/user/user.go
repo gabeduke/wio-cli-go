@@ -7,10 +7,13 @@ import (
 	"github.com/gabeduke/wio-cli-go/pkg/config"
 	"github.com/gabeduke/wio-cli-go/pkg/util"
 	"github.com/howeyc/gopass"
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"io"
+	"net"
 	"net/http"
+	"net/url"
 )
 
 type LoginResponse struct {
@@ -70,10 +73,11 @@ func (c *credentials) create(logger *log.Entry) (*CreateResponse, error) {
 	return &r, nil
 }
 
-func (r *LoginResponse) login(logger *log.Entry) error {
+func (r *LoginResponse) Login(logger *log.Entry) error {
 	var usr credentials
 
 	usr.getEmail(logger)
+	viper.Set(config.EMAIL, usr.Email)
 
 	err := usr.getPassword(logger)
 	if err != nil {
@@ -94,17 +98,24 @@ func (r *LoginResponse) login(logger *log.Entry) error {
 	if err != nil {
 		panic(err)
 	}
+
+	if resp.StatusCode != 200 {
+		return errors.Errorf("Login failed: %v", resp.Status)
+	}
+
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body) // response body is []byte
 
-	logger.WithField("status", resp.Status).Debug("login")
-	logger.WithField("headers", resp.Header).Trace("login")
+	logger.WithField("status", resp.Status).Debug("Login")
+	logger.WithField("headers", resp.Header).Trace("Login")
 
 	err = json.Unmarshal(body, r)
 	if err != nil {
 		return err
 	}
-	logger.WithField("token", r.Token).WithField("user_id", r.UserId).Info("login successful")
+
+	viper.Set(config.TOKEN, r.Token)
+	logger.WithField("token", r.Token).WithField("user_id", r.UserId).Info("Login successful")
 
 	return nil
 }
@@ -127,4 +138,37 @@ func (c *credentials) getEmail(logger *log.Entry) {
 	}
 
 	logger.Infof("email: %s", c.Email)
+}
+
+func configure(logger *log.Entry, cfgFile string) error {
+	logger.Debug("configure called")
+
+	// Prompt for server address
+	viper.Set(config.HOST, util.Prompt("Enter the server address (eg. https://wio.leetserve.com): ", viper.GetString(config.HOST)))
+
+	// Prompt for server IP
+	mip := util.Prompt("Enter the server IP address (leave blank to allow discovery): ", "")
+	if mip == "" {
+		host, err := url.Parse(viper.GetString(config.HOST))
+		if err != nil {
+			return errors.Errorf("Error parsing server address: %v", err)
+		}
+		hostAddr, err := net.LookupIP(host.Hostname())
+		if err != nil {
+			fmt.Println("Unknown host")
+		} else {
+			mip = hostAddr[0].String()
+		}
+	}
+	viper.Set(config.HOST_IP, mip)
+
+	u := LoginResponse{}
+	u.Login(logger)
+
+	viper.Set(config.TOKEN, u.Token)
+
+	logger.Debugf("Wio CLI Configuration: %v", viper.AllSettings())
+	logger.WithField("file", viper.ConfigFileUsed()).Info("Wio CLI Configuration file updated")
+
+	return viper.WriteConfigAs(viper.ConfigFileUsed())
 }

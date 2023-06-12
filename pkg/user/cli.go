@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func NewUserCmd() *cobra.Command {
+func NewUserCmd(cfg string) *cobra.Command {
 	var userCmd = &cobra.Command{
 		Use:   "user",
 		Short: "Manage user settings",
@@ -15,6 +15,7 @@ func NewUserCmd() *cobra.Command {
 
 	userCmd.AddCommand(newUserCreateCmd())
 	userCmd.AddCommand(newUserLoginCmd())
+	userCmd.AddCommand(newConfigureCmd(cfg))
 
 	return userCmd
 }
@@ -49,7 +50,7 @@ func newUserLoginCmd() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := util.CreateNamedLogger("user")
 			resp := &LoginResponse{}
-			err := resp.login(logger)
+			err := resp.Login(logger)
 			if err != nil {
 				logger.Fatal(err)
 			}
@@ -71,3 +72,27 @@ func newUserLoginCmd() *cobra.Command {
 	return userLoginCmd
 }
 
+func newConfigureCmd(cfgFile string) *cobra.Command {
+	// configureCmd represents the configure command
+	var configureCmd = &cobra.Command{
+		Use:   "configure",
+		Short: "Setup the Wio CLI Configuration file",
+		Long: `The default configuration file is located at ~/.wio/config.json
+
+The configuration file is used to store your 
+* Wio API Access Token
+* User email address
+* Server address
+* Server IP
+
+This command will Prompt you for the above information and store it in the configuration file.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := util.CreateNamedLogger("user")
+			err := configure(logger, cfgFile)
+			if err != nil {
+				logger.Fatal(err)
+			}
+		},
+	}
+	return configureCmd
+}
