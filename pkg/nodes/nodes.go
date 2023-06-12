@@ -34,6 +34,25 @@ func getURIFromConfig() (*url.URL, error) {
 
 func RegisterNode() error {
 
+	if viper.GetBool("create") {
+		if nodeName == "" {
+			nodeName = util.Prompt("Enter a name for your node: ", "")
+		}
+
+		if boardType == "" {
+			boardTypeStr := util.Prompt("Enter the board type (node or link): ", "link")
+			boardType = boardEnum(boardTypeStr)
+		}
+
+		resp, err := CreateNode(nodeName, boardType)
+		if err != nil {
+			return err
+		}
+
+		viper.Set(config.NODE_KEY, resp.NodeKey)
+		viper.Set(config.NODE_SN, resp.NodeSn)
+	}
+
 	fmt.Println("Registering node...")
 	fmt.Println("To enter AP mode on the device: hold the `func` button for 5 seconds then connect to the AP from your WIFI network list")
 	fmt.Print("Connect to device  then hit RETURN")

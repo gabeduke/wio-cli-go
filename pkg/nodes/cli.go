@@ -13,6 +13,9 @@ import (
 
 type boardEnum string
 
+var nodeName string
+var boardType boardEnum
+
 const (
 	boardEnumNode boardEnum = "node"
 	boardEnumLink boardEnum = "link"
@@ -73,6 +76,11 @@ func newNodesRegisterCmd() *cobra.Command {
 	nodesRegisterCmd.Flags().BoolP("create", "c", false, "Create a new node")
 	nodesRegisterCmd.Flags().StringVarP(&sn, "sn", "s", "", "Serial number of the node")
 	nodesRegisterCmd.Flags().StringVarP(&key, "key", "k", "", "Key of the node")
+	nodesRegisterCmd.Flags().StringVarP(&nodeName, "name", "n", "", "Name of the node")
+	nodesRegisterCmd.Flags().Var(&boardType, "board", `Wio Board type. allowed: "node", "link""`)
+	viper.BindPFlag("create", nodesRegisterCmd.Flags().Lookup("create"))
+	viper.BindPFlag("name", nodesRegisterCmd.Flags().Lookup("name"))
+	viper.BindPFlag("board", nodesRegisterCmd.Flags().Lookup("board"))
 	viper.BindPFlag("sn", nodesRegisterCmd.Flags().Lookup("sn"))
 	viper.BindPFlag("key", nodesRegisterCmd.Flags().Lookup("key"))
 
@@ -80,8 +88,6 @@ func newNodesRegisterCmd() *cobra.Command {
 }
 
 func newNodesCreateCmd() *cobra.Command {
-	var nodeName string
-	var boardType boardEnum
 	var nodesCreateCmd = &cobra.Command{
 		Use:   "create",
 		Short: "Create a new node",
