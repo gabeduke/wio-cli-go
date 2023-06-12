@@ -9,6 +9,9 @@ ${BIN_DIR}:
 $(WIO): $(BIN_DIR)
 	go build -o $(WIO)
 
+build: $(WIO)
+	go build -o $(WIO)
+
 login: $(WIO)
 	$(WIO) user login $(FLAGS)
 

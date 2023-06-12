@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gabeduke/wio-cli-go/pkg/config"
+	"github.com/gabeduke/wio-cli-go/pkg/util"
 	"github.com/spf13/viper"
 	"net"
 	"net/http"
@@ -33,7 +34,9 @@ func getURIFromConfig() (*url.URL, error) {
 
 func RegisterNode() error {
 
-	fmt.Print("Connect to device then hit RETURN")
+	fmt.Println("Registering node...")
+	fmt.Println("To enter AP mode on the device: hold the `func` button for 5 seconds then connect to the AP from your WIFI network list")
+	fmt.Print("Connect to device  then hit RETURN")
 	input := bufio.NewScanner(os.Stdin)
 	input.Scan()
 
@@ -43,7 +46,10 @@ func RegisterNode() error {
 		return err
 	}
 
-	r := fmt.Sprintf("APCFG: %s\t%s\t%s\t%s\t%s\t%s\t\r\n", viper.GetString("ssid"), viper.GetString("pass"), viper.GetString("key"), viper.GetString("sn"), viper.GetString(config.HOST), viper.GetString(config.HOST_IP))
+	ssid := util.Prompt("Enter the name of the SSID you want to connect to: ", "")
+	pass := util.Prompt("Enter the password for the SSID: ", "")
+
+	r := fmt.Sprintf("APCFG: %s\t%s\t%s\t%s\t%s\t%s\t\r\n", ssid, pass, viper.GetString("key"), viper.GetString("sn"), viper.GetString(config.HOST), viper.GetString(config.HOST_IP))
 	fmt.Println(r)
 	_, err = fmt.Fprintf(conn, r)
 	if err != nil {
