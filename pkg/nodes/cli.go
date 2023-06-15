@@ -40,7 +40,21 @@ func (e *boardEnum) Type() string {
 	return "boardEnum"
 }
 
-func NewNodesRegisterCmd() *cobra.Command {
+func NewNodesCmd() *cobra.Command {
+	var nodesCmd = &cobra.Command{
+		Use:   "nodes",
+		Short: "Manage your wio nodes",
+	}
+
+	nodesCmd.AddCommand(newNodesRegisterCmd())
+	nodesCmd.AddCommand(newNodesCreateCmd())
+	nodesCmd.AddCommand(newNodesDeleteCmd())
+	nodesCmd.AddCommand(newNodesListCmd())
+
+	return nodesCmd
+}
+
+func newNodesRegisterCmd() *cobra.Command {
 	var sn, key string
 	var nodesRegisterCmd = &cobra.Command{
 		Use:   "register",
@@ -68,7 +82,7 @@ func NewNodesRegisterCmd() *cobra.Command {
 	return nodesRegisterCmd
 }
 
-func NewNodesCreateCmd() *cobra.Command {
+func newNodesCreateCmd() *cobra.Command {
 	var nodesCreateCmd = &cobra.Command{
 		Use:   "create",
 		Short: "Create a new node",
@@ -100,7 +114,7 @@ func NewNodesCreateCmd() *cobra.Command {
 	return nodesCreateCmd
 }
 
-func NewNodesDeleteCmd() *cobra.Command {
+func newNodesDeleteCmd() *cobra.Command {
 	var sn string
 	var nodesDeleteCmd = &cobra.Command{
 		Use:   "delete",
@@ -125,7 +139,7 @@ func NewNodesDeleteCmd() *cobra.Command {
 	return nodesDeleteCmd
 }
 
-func NewNodesListCmd() *cobra.Command {
+func newNodesListCmd() *cobra.Command {
 	var nodesListCmd = &cobra.Command{
 		Use:   "list",
 		Short: "List all of your nodes",

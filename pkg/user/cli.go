@@ -7,7 +7,20 @@ import (
 	"github.com/spf13/viper"
 )
 
-func NewUserCreateCmd() *cobra.Command {
+func NewUserCmd() *cobra.Command {
+	var userCmd = &cobra.Command{
+		Use:   "user",
+		Short: "Manage your wio user",
+	}
+
+	userCmd.AddCommand(newUserCreateCmd())
+	userCmd.AddCommand(newUserLoginCmd())
+	userCmd.AddCommand(newConfigureCmd())
+
+	return userCmd
+}
+
+func newUserCreateCmd() *cobra.Command {
 	var userCreateCmd = &cobra.Command{
 		Use:   "create",
 		Short: "Create a new user",
@@ -29,7 +42,7 @@ func NewUserCreateCmd() *cobra.Command {
 	return userCreateCmd
 }
 
-func NewUserLoginCmd() *cobra.Command {
+func newUserLoginCmd() *cobra.Command {
 	var userLoginCmd = &cobra.Command{
 		Use:   "login",
 		Short: "Login to Wio Server",
@@ -59,7 +72,7 @@ func NewUserLoginCmd() *cobra.Command {
 	return userLoginCmd
 }
 
-func NewConfigureCmd() *cobra.Command {
+func newConfigureCmd() *cobra.Command {
 	// configureCmd represents the configure command
 	var configureCmd = &cobra.Command{
 		Use:   "configure",
