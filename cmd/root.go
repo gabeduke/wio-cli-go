@@ -108,7 +108,9 @@ func init() {
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 
 	rootCmd.AddCommand(user.NewUserCmd())
+	rootCmd.AddCommand(user.NewUserLoginCmd())
 	rootCmd.AddCommand(nodes.NewNodesCmd())
+	rootCmd.AddCommand(nodes.NewNodesListCmd())
 }
 
 // initConfig reads in config file and ENV variables if set.

@@ -14,7 +14,6 @@ func NewUserCmd() *cobra.Command {
 	}
 
 	userCmd.AddCommand(newUserCreateCmd())
-	userCmd.AddCommand(newUserLoginCmd())
 	userCmd.AddCommand(newConfigureCmd())
 
 	return userCmd
@@ -42,11 +41,12 @@ func newUserCreateCmd() *cobra.Command {
 	return userCreateCmd
 }
 
-func newUserLoginCmd() *cobra.Command {
+func NewUserLoginCmd() *cobra.Command {
 	var userLoginCmd = &cobra.Command{
-		Use:   "login",
-		Short: "Login to Wio Server",
-		Long:  "Login to the Wio Server and store the returned token in the configuration file.",
+		Use:     "login",
+		Short:   "Login to Wio Server",
+		Long:    "Login to the Wio Server and store the returned token in the configuration file.",
+		Aliases: []string{"auth", "authenticate"},
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := internal.CreateNamedLogger("user")
 			resp := &LoginResponse{}

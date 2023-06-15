@@ -42,14 +42,14 @@ func (e *boardEnum) Type() string {
 
 func NewNodesCmd() *cobra.Command {
 	var nodesCmd = &cobra.Command{
-		Use:   "nodes",
-		Short: "Manage your wio nodes",
+		Use:     "nodes",
+		Short:   "Manage your wio nodes",
+		Aliases: []string{"node"},
 	}
 
 	nodesCmd.AddCommand(newNodesRegisterCmd())
 	nodesCmd.AddCommand(newNodesCreateCmd())
 	nodesCmd.AddCommand(newNodesDeleteCmd())
-	nodesCmd.AddCommand(newNodesListCmd())
 
 	return nodesCmd
 }
@@ -139,7 +139,7 @@ func newNodesDeleteCmd() *cobra.Command {
 	return nodesDeleteCmd
 }
 
-func newNodesListCmd() *cobra.Command {
+func NewNodesListCmd() *cobra.Command {
 	var nodesListCmd = &cobra.Command{
 		Use:   "list",
 		Short: "List all of your nodes",
