@@ -4,9 +4,9 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/gabeduke/wio-cli-go/pkg/config"
-	"github.com/gabeduke/wio-cli-go/pkg/util"
+	"github.com/gabeduke/wio-cli-go/internal"
 	"github.com/spf13/viper"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -20,7 +20,28 @@ type CreateResp struct {
 	NodeSn  string `json:"node_sn"`
 }
 
-type DeleteResp struct {
+type Node struct {
+	Name        string      `json:"name"`
+	NodeKey     string      `json:"node_key"`
+	NodeSn      string      `json:"node_sn"`
+	Dataxserver interface{} `json:"dataxserver"`
+	Board       string      `json:"board"`
+	Online      bool        `json:"online"`
+}
+
+type ListResp struct {
+	Nodes []Node `json:"nodes"`
+}
+
+func (l ListResp) String() string {
+	b, err := json.MarshalIndent(l, "", "  ")
+	if err != nil {
+		fmt.Println(err)
+	}
+	return string(b)
+}
+
+type deleteResp struct {
 	Result string `json:"result"`
 }
 
@@ -29,18 +50,18 @@ func (c CreateResp) String() string {
 }
 
 func getURIFromConfig() (*url.URL, error) {
-	return url.Parse(viper.GetString(config.HOST))
+	return url.Parse(viper.GetString(internal.HOST))
 }
 
 func RegisterNode() error {
 
 	if viper.GetBool("create") {
 		if nodeName == "" {
-			nodeName = util.Prompt("Enter a name for your node: ", "")
+			nodeName = internal.Prompt("Enter a name for your node: ", "")
 		}
 
 		if boardType == "" {
-			boardTypeStr := util.Prompt("Enter the board type (node or link): ", "link")
+			boardTypeStr := internal.Prompt("Enter the board type (node or link): ", "link")
 			boardType = boardEnum(boardTypeStr)
 		}
 
@@ -49,8 +70,8 @@ func RegisterNode() error {
 			return err
 		}
 
-		viper.Set(config.NODE_KEY, resp.NodeKey)
-		viper.Set(config.NODE_SN, resp.NodeSn)
+		viper.Set(internal.NODE_KEY, resp.NodeKey)
+		viper.Set(internal.NODE_SN, resp.NodeSn)
 	}
 
 	fmt.Println("Registering node...")
@@ -60,15 +81,15 @@ func RegisterNode() error {
 	input.Scan()
 
 	p := make([]byte, 2048)
-	conn, err := net.Dial("udp", config.NODE_UDP_ADDR)
+	conn, err := net.Dial("udp", internal.NODE_UDP_ADDR)
 	if err != nil {
 		return err
 	}
 
-	ssid := util.Prompt("Enter the name of the SSID you want to connect to: ", "")
-	pass := util.Prompt("Enter the password for the SSID: ", "")
+	ssid := internal.Prompt("Enter the name of the SSID you want to connect to: ", "")
+	pass := internal.Prompt("Enter the password for the SSID: ", "")
 
-	r := fmt.Sprintf("APCFG: %s\t%s\t%s\t%s\t%s\t%s\t\r\n", ssid, pass, viper.GetString("key"), viper.GetString("sn"), viper.GetString(config.HOST), viper.GetString(config.HOST_IP))
+	r := fmt.Sprintf("APCFG: %s\t%s\t%s\t%s\t%s\t%s\t\r\n", ssid, pass, viper.GetString("key"), viper.GetString("sn"), viper.GetString(internal.HOST), viper.GetString(internal.HOST_IP))
 	fmt.Println(r)
 	_, err = fmt.Fprintf(conn, r)
 	if err != nil {
@@ -86,26 +107,43 @@ func RegisterNode() error {
 	return nil
 }
 
-func ListNodes() (*http.Response, error) {
+func ListNodes() (ListResp, error) {
+	nodes := ListResp{}
 	ep, err := getURIFromConfig()
 	if err != nil {
-		return &http.Response{}, err
+		return nodes, err
 	}
 	ep.Path = "/v1/nodes/list"
 
 	req, err := http.NewRequest("GET", ep.String(), nil)
-	req.Header.Add("Authorization", "token "+viper.GetString(config.TOKEN))
+	req.Header.Add("Authorization", "token "+viper.GetString(internal.TOKEN))
 	req.Header.Add("Accept", "application/json")
-	return http.DefaultClient.Do(req)
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nodes, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nodes, fmt.Errorf("failed to list nodes: %s", resp.Status)
+	}
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nodes, err
+	}
+	json.Unmarshal(bodyBytes, &nodes)
+
+	return nodes, nil
 }
 
 func CreateNode(name string, boardType boardEnum) (CreateResp, error) {
 	var board string
 	switch boardType {
 	case boardEnumNode:
-		board = config.WIO_NODE_V1_0
+		board = internal.WIO_NODE_V1_0
 	case boardEnumLink:
-		board = config.WIO_LINK_V1_0
+		board = internal.WIO_LINK_V1_0
 	}
 
 	data := url.Values{
@@ -135,7 +173,7 @@ func CreateNode(name string, boardType boardEnum) (CreateResp, error) {
 	return registerResp, nil
 }
 
-func deleteNode(sn string) error {
+func DeleteNode(sn string) error {
 	data := url.Values{
 		"node_sn": {sn},
 	}
@@ -153,7 +191,7 @@ func deleteNode(sn string) error {
 	}
 
 	defer resp.Body.Close()
-	var deleteResp DeleteResp
+	var deleteResp deleteResp
 	err = json.NewDecoder(resp.Body).Decode(&deleteResp)
 	if err != nil {
 		return err
@@ -173,7 +211,7 @@ func postRequest(data url.Values, ep *url.URL) (*http.Response, error) {
 	}
 
 	// set headers
-	req.Header.Add("Authorization", "token "+viper.GetString(config.TOKEN))
+	req.Header.Add("Authorization", "token "+viper.GetString(internal.TOKEN))
 	req.Header.Add("Accept", "application/json")
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))

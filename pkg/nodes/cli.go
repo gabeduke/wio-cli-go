@@ -4,11 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gabeduke/wio-cli-go/pkg/util"
+	"github.com/gabeduke/wio-cli-go/internal"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io"
-	"net/http"
 )
 
 type boardEnum string
@@ -42,30 +40,13 @@ func (e *boardEnum) Type() string {
 	return "boardEnum"
 }
 
-func NewNodesCmd() *cobra.Command {
-	var nodesCmd = &cobra.Command{
-		Use:   "nodes",
-		Short: "Manage your Wio Nodes",
-		Long: `Wio nodes must be registered with the Wio Link IoT Platform before they can be used.
-
-All of the subcommnad options must be used with a user token.`,
-	}
-
-	nodesCmd.AddCommand(newNodesCreateCmd())
-	nodesCmd.AddCommand(newNodesDeleteCmd())
-	nodesCmd.AddCommand(newNodesListCmd())
-	nodesCmd.AddCommand(newNodesRegisterCmd())
-
-	return nodesCmd
-}
-
-func newNodesRegisterCmd() *cobra.Command {
+func NewNodesRegisterCmd() *cobra.Command {
 	var sn, key string
 	var nodesRegisterCmd = &cobra.Command{
 		Use:   "register",
 		Short: "Register a node",
 		Run: func(cmd *cobra.Command, args []string) {
-			logger := util.CreateNamedLogger("nodes")
+			logger := internal.CreateNamedLogger("nodes")
 			err := RegisterNode()
 			if err != nil {
 				logger.Fatal(err)
@@ -87,12 +68,12 @@ func newNodesRegisterCmd() *cobra.Command {
 	return nodesRegisterCmd
 }
 
-func newNodesCreateCmd() *cobra.Command {
+func NewNodesCreateCmd() *cobra.Command {
 	var nodesCreateCmd = &cobra.Command{
 		Use:   "create",
 		Short: "Create a new node",
 		Run: func(cmd *cobra.Command, args []string) {
-			logger := util.CreateNamedLogger("nodes")
+			logger := internal.CreateNamedLogger("nodes")
 			resp, err := CreateNode(nodeName, boardType)
 			if err != nil {
 				logger.Fatal(err)
@@ -119,14 +100,14 @@ func newNodesCreateCmd() *cobra.Command {
 	return nodesCreateCmd
 }
 
-func newNodesDeleteCmd() *cobra.Command {
+func NewNodesDeleteCmd() *cobra.Command {
 	var sn string
 	var nodesDeleteCmd = &cobra.Command{
 		Use:   "delete",
 		Short: "Delete a node",
 		Run: func(cmd *cobra.Command, args []string) {
-			logger := util.CreateNamedLogger("nodes")
-			err := deleteNode(sn)
+			logger := internal.CreateNamedLogger("nodes")
+			err := DeleteNode(sn)
 			if err != nil {
 				logger.Fatal(err)
 			}
@@ -144,26 +125,18 @@ func newNodesDeleteCmd() *cobra.Command {
 	return nodesDeleteCmd
 }
 
-func newNodesListCmd() *cobra.Command {
+func NewNodesListCmd() *cobra.Command {
 	var nodesListCmd = &cobra.Command{
 		Use:   "list",
 		Short: "List all of your nodes",
 		Run: func(cmd *cobra.Command, args []string) {
-			logger := util.CreateNamedLogger("nodes")
-			resp, err := ListNodes()
+			logger := internal.CreateNamedLogger("nodes")
+			nodes, err := ListNodes()
 			if err != nil {
 				logger.Fatal(err)
 			}
 
-			if resp.StatusCode != http.StatusOK {
-				logger.WithField("status", resp.StatusCode).Fatal("Error listing nodes")
-			}
-			bodyBytes, err := io.ReadAll(resp.Body)
-			if err != nil {
-				logger.Fatal(err)
-			}
-			bodyString := string(bodyBytes)
-			fmt.Println(bodyString)
+			fmt.Println(nodes)
 		},
 	}
 

@@ -2,32 +2,19 @@ package user
 
 import (
 	"fmt"
-	"github.com/gabeduke/wio-cli-go/pkg/util"
+	"github.com/gabeduke/wio-cli-go/internal"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-func NewUserCmd(cfg string) *cobra.Command {
-	var userCmd = &cobra.Command{
-		Use:   "user",
-		Short: "Manage user settings",
-	}
-
-	userCmd.AddCommand(newUserCreateCmd())
-	userCmd.AddCommand(newUserLoginCmd())
-	userCmd.AddCommand(newConfigureCmd(cfg))
-
-	return userCmd
-}
-
-func newUserCreateCmd() *cobra.Command {
+func NewUserCreateCmd() *cobra.Command {
 	var userCreateCmd = &cobra.Command{
 		Use:   "create",
 		Short: "Create a new user",
 		Run: func(cmd *cobra.Command, args []string) {
-			logger := util.CreateNamedLogger("user")
+			logger := internal.CreateNamedLogger("user")
 			credentials := &credentials{}
-			_, err := credentials.create(logger)
+			_, err := credentials.Create(logger)
 			if err != nil {
 				logger.Fatal(err)
 			}
@@ -36,19 +23,19 @@ func newUserCreateCmd() *cobra.Command {
 		},
 	}
 
-	userCreateCmd.PersistentFlags().StringP("email", "e", "", "email address")
-	viper.BindPFlag("email", userCreateCmd.PersistentFlags().Lookup("email"))
+	userCreateCmd.PersistentFlags().StringP("Email", "e", "", "Email address")
+	viper.BindPFlag("Email", userCreateCmd.PersistentFlags().Lookup("Email"))
 
 	return userCreateCmd
 }
 
-func newUserLoginCmd() *cobra.Command {
+func NewUserLoginCmd() *cobra.Command {
 	var userLoginCmd = &cobra.Command{
 		Use:   "login",
 		Short: "Login to Wio Server",
 		Long:  "Login to the Wio Server and store the returned token in the configuration file.",
 		Run: func(cmd *cobra.Command, args []string) {
-			logger := util.CreateNamedLogger("user")
+			logger := internal.CreateNamedLogger("user")
 			resp := &LoginResponse{}
 			err := resp.Login(logger)
 			if err != nil {
@@ -66,13 +53,13 @@ func newUserLoginCmd() *cobra.Command {
 		},
 	}
 
-	userLoginCmd.PersistentFlags().StringP("email", "e", "", "email address")
-	viper.BindPFlag("email", userLoginCmd.PersistentFlags().Lookup("email"))
+	userLoginCmd.PersistentFlags().StringP("Email", "e", "", "Email address")
+	viper.BindPFlag("Email", userLoginCmd.PersistentFlags().Lookup("Email"))
 
 	return userLoginCmd
 }
 
-func newConfigureCmd(cfgFile string) *cobra.Command {
+func NewConfigureCmd() *cobra.Command {
 	// configureCmd represents the configure command
 	var configureCmd = &cobra.Command{
 		Use:   "configure",
@@ -81,14 +68,14 @@ func newConfigureCmd(cfgFile string) *cobra.Command {
 
 The configuration file is used to store your 
 * Wio API Access Token
-* User email address
+* User Email address
 * Server address
 * Server IP
 
 This command will Prompt you for the above information and store it in the configuration file.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			logger := util.CreateNamedLogger("user")
-			err := configure(logger, cfgFile)
+			logger := internal.CreateNamedLogger("user")
+			err := configure(logger)
 			if err != nil {
 				logger.Fatal(err)
 			}
